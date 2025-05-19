@@ -1,5 +1,7 @@
 import java.net.*;
 import java.util.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.io.*;
 
 public class Server {
@@ -13,6 +15,7 @@ public class Server {
             serverSocket = new ServerSocket(PORT);
             gameBoard = new GameBoard();
             clients = new ArrayList<>();
+
             System.out.println("サーバーが起動しました。ポート: " + PORT);
         } catch (IOException e) {
             System.out.println("サーバーの起動に失敗しました: " + e.getMessage());
@@ -25,6 +28,7 @@ public class Server {
                 System.out.println("クライアントの接続を待っています...");
                 Socket clientSocket = serverSocket.accept();
                 int playerId = clients.size() + 1;
+
                 System.out.println("クライアントが接続しました: " + clientSocket.getInetAddress());
 
                 // TODO: クライアントとの通信処理を実装
@@ -43,17 +47,18 @@ public class Server {
             System.out.println("クライアントとの通信でエラーが発生しました: " + e.getMessage());
         }
     }
-
+  
     public synchronized void broadcast(String message){
         for(ClientHandler client : clients) {
             client.sendMessage(message);
         }
     }
-
+  
     public static void main(String[] args) {
         Server server = new Server();
         server.start();
     }
+
 } 
 
 //各プレイヤーとの通信処理を行うスレッド
