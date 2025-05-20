@@ -96,17 +96,26 @@ public class GameBoard {
     }
 
     public String getBoardState() {
-        // TODO: ボードの状態を文字列で返す処理を実装
-        String boardState = "";
+        StringBuilder sb = new StringBuilder();
         for (int y = 0; y < BOARD_SIZE; y++) {
             for (int x = 0; x < BOARD_SIZE; x++) {
-                for (Piece piece : board.get(y).get(x)) {
-                    boardState += piece.getSize() + " ";
+                List<Piece> stack = board.get(y).get(x);
+                if (stack.isEmpty()) {
+                    sb.append("0");
+                } else {
+                    Piece top = stack.get(stack.size() - 1);
+                    String mark = (top.getOwner() == 1) ? "o" : "x";
+                    sb.append(top.getSize()).append(mark);
+                }
+                if (x < BOARD_SIZE - 1) {
+                    sb.append(" ");
                 }
             }
+            sb.append("\n");
         }
-        return boardState;
+        return sb.toString();
     }
+    
 
     private int getTopOwner(int x, int y) {
         List<Piece> stack = board.get(y).get(x);
