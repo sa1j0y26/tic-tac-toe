@@ -9,6 +9,8 @@ public class Server {
     private ServerSocket serverSocket;
     private GameBoard gameBoard;
     private List<ClientHandler> clients;
+    private int currentTurn = 1;
+    private boolean gameOver = false;
 
     public Server() {
         try {
@@ -52,6 +54,22 @@ public class Server {
             client.sendMessage(message);
         }
     }
+
+    public synchronized int getCurrentTurn(){
+        return currentTurn;
+    }
+
+    public synchronized void switchTurn(){
+        currentTurn = (currentTurn == 1) ? 2 : 1;
+    }
+
+    public synchronized boolean isGameOver(){
+        return gameOver;
+    }
+
+    public synchronized void setGameOver(boolean over){
+        gameOver = over;
+    }
   
     public static void main(String[] args) {
         Server server = new Server();
@@ -81,37 +99,62 @@ class ClientHandler extends Thread {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             out.println("プレイヤー" + playerId + " として接続しました。");
-            
-            String input;
-            while ((input = in.readLine()) != null) {
-                String[] parts = input.trim().split(" ");
-                if (parts.length == 0) {
-                    out.println("無効なコマンドです。");
-                    continue;
+
+            //ターン管理
+            while(!server.isGameOver()){
+
+                //自分のターンまで待機
+                while(server.getCurrentTurn() != playerId && !server.isGameOver()){
+                    sendMessage("相手が入力中...");
+                    Thread.sleep(1000);
                 }
 
-                String command = parts[0].toUpperCase();
+                if(server.isGameOver()){
+                    sendMessage("ゲームは終了しました");
+                    break;
+                }
 
-                switch (command) {
-                    case "PLACE":
-                        handlePlace(parts);
-                        break;
-                    case "MOVE":
-                        handleMove(parts);
-                        break;
-                    case "BOARD":
-                        out.println(gameBoard.getBoardState());
-                        break;
-                    default:
-                        out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
+                sendMessage("あなたのターンです！");
+
+                String input;
+                while ((input = in.readLine()) != null) {
+                    input = input.trim();
+                    if (input.isEmpty()) continue;
+                    
+                    String[] parts = input.split(" ");
+                    String command = parts[0].toUpperCase();
+                    
+
+                    switch (command) {
+
+                        case "PLACE":
+                            handlePlace(parts);
+                            break;
+                        case "MOVE":
+                            handleMove(parts);
+                            break;
+                        case "BOARD":
+                            out.println(gameBoard.getBoardState());
+                            break;
+                        default:
+                            out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
+                    }
                 }
             }
+            
+            socket.close()
+            
         } catch (IOException e) {
             System.out.println("プレイヤー " + playerId + " との通信でエラー: " + e.getMessage());
         }
     }
 
     private void handlePlace(String[] parts) {
+        if (server.getCurrentTurn() != playerId) {
+            out.println("現在はあなたの番ではありません。");
+            return;
+        }
+
         if (parts.length != 4) {
             out.println("PLACEコマンドの形式: PLACE x y size");
             return;
@@ -130,8 +173,14 @@ class ClientHandler extends Thread {
                     server.broadcast("BOARD\n" + gameBoard.getBoardState());
 
                     int winner = gameBoard.checkWinner();
-                    if (winner != 0) {
+                    if (winner > 0) {
                         server.broadcast("勝者: プレイヤー " + winner);
+                        server.setGameOver(true);
+                        socket.close(); //通信終了
+                        return; 
+                    } else {
+                        server.switchTurn();
+                        server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn()); 
                     }
                 } else {
                     out.println("その位置にはコマを置けません。");
@@ -143,6 +192,11 @@ class ClientHandler extends Thread {
     }
 
     private void handleMove(String[] parts) {
+        if (server.getCurrentTurn() != playerId) {
+            out.println("現在はあなたの番ではありません。");
+            return;
+        }
+
         if (parts.length != 5) {
             out.println("MOVEコマンドの形式: MOVE fromX fromY toX toY");
             return;
@@ -160,8 +214,14 @@ class ClientHandler extends Thread {
                     server.broadcast("BOARD\n" + gameBoard.getBoardState());
 
                     int winner = gameBoard.checkWinner();
-                    if (winner != 0) {
+                    if (winner > 0) {
                         server.broadcast("勝者: プレイヤー " + winner);
+                        server.setGameOver(true);
+                        socket.close(); //通信終了
+                        return; 
+                    } else {
+                        server.switchTurn();
+                        server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn());
                     }
                 } else {
                     out.println("その移動は無効です。");
