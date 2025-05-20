@@ -28,7 +28,6 @@ public class Server {
                 System.out.println("クライアントの接続を待っています...");
                 Socket clientSocket = serverSocket.accept();
                 int playerId = clients.size() + 1;
-
                 System.out.println("クライアントが接続しました: " + clientSocket.getInetAddress());
 
                 // TODO: クライアントとの通信処理を実装
@@ -47,7 +46,7 @@ public class Server {
             System.out.println("クライアントとの通信でエラーが発生しました: " + e.getMessage());
         }
     }
-  
+
     public synchronized void broadcast(String message){
         for(ClientHandler client : clients) {
             client.sendMessage(message);
@@ -58,7 +57,6 @@ public class Server {
         Server server = new Server();
         server.start();
     }
-
 } 
 
 //各プレイヤーとの通信処理を行うスレッド
