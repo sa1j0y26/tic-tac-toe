@@ -113,4 +113,51 @@ public class GameBoard {
         if (stack.size() == 0) return 0;
         return stack.get(stack.size() - 1).getOwner();
     }
+
+    public int checkWinner() {
+        // 横・縦
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            // 横
+            int rowOwner = getTopOwner(0, i);
+            boolean rowWin = rowOwner > 0;
+            for (int j = 1; j < BOARD_SIZE; j++) {
+                if (getTopOwner(j, i) != rowOwner) {
+                    rowWin = false;
+                    break;
+                }
+            }
+            if (rowWin) return rowOwner;
+            // 縦
+            int colOwner = getTopOwner(i, 0);
+            boolean colWin = colOwner > 0;
+            for (int j = 1; j < BOARD_SIZE; j++) {
+                if (getTopOwner(i, j) != colOwner) {
+                    colWin = false;
+                    break;
+                }
+            }
+            if (colWin) return colOwner;
+        }
+        // 斜め（左上→右下）
+        int diagOwner1 = getTopOwner(0, 0);
+        boolean diagWin1 = diagOwner1 > 0;
+        for (int i = 1; i < BOARD_SIZE; i++) {
+            if (getTopOwner(i, i) != diagOwner1) {
+                diagWin1 = false;
+                break;
+            }
+        }
+        if (diagWin1) return diagOwner1;
+        // 斜め（右上→左下）
+        int diagOwner2 = getTopOwner(BOARD_SIZE - 1, 0);
+        boolean diagWin2 = diagOwner2 > 0;
+        for (int i = 1; i < BOARD_SIZE; i++) {
+            if (getTopOwner(BOARD_SIZE - 1 - i, i) != diagOwner2) {
+                diagWin2 = false;
+                break;
+            }
+        }
+        if (diagWin2) return diagOwner2;
+        return -1;
+    }
 } 
