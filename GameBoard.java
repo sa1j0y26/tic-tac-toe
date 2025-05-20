@@ -104,7 +104,7 @@ public class GameBoard {
                     sb.append("0");
                 } else {
                     Piece top = stack.get(stack.size() - 1);
-                    String mark = (top.getOwner() == 1) ? "⚪︎" : "×";
+                    String mark = (top.getOwner() == 1) ? "o" : "x";
                     sb.append(top.getSize()).append(mark);
                 }
                 if (x < BOARD_SIZE - 1) {
