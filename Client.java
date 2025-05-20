@@ -47,7 +47,7 @@ public class Client {
             // 2. ユーザーからの入力の受付
             // 3. サーバーへのコマンド送信
             while(true){
-                //ゲーム中
+                // ゲーム中
             
             String str=in.readLine();
 
