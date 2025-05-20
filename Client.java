@@ -23,6 +23,7 @@ public class Client {
     public void Move(){
         Scanner sc=new Scanner(System.in);
         int bi,bj,ai,aj;//b_:動かす前の場所 a_:動かす先の場所
+        System.out.println("動かすコマの場所と動かす先のコマの場所を入力してください");
         bi=sc.nextInt();
         bj=sc.nextInt();
         ai=sc.nextInt();
@@ -32,6 +33,7 @@ public class Client {
     public void Place(){
         Scanner sc=new Scanner(System.in);
         int size,i,j;//sizeのコマを(i,j)に置く
+        System.out.println("置くコマのサイズと場所を入力してください");
         size=sc.nextInt();
         i=sc.nextInt();
         j=sc.nextInt();
@@ -53,6 +55,8 @@ public class Client {
                 System.out.println("相手のターンです");
             //自分のターンなら
             System.out.println("行動を選択してください: コマを置く:p コマを動かす:m");
+            //勝敗が決まった
+            //break;
             Scanner sc=new Scanner(System.in);
             while(true){
             String str_in=sc.nextLine();
