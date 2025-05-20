@@ -107,4 +107,10 @@ public class GameBoard {
         }
         return boardState;
     }
+
+    private int getTopOwner(int x, int y) {
+        List<Piece> stack = board.get(y).get(x);
+        if (stack.size() == 0) return 0;
+        return stack.get(stack.size() - 1).getOwner();
+    }
 } 
