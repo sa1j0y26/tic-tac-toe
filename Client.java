@@ -4,7 +4,7 @@ import java.util.*;
 
 public class Client {
     private static final String SERVER_IP = "localhost";
-    private static final int SERVER_PORT = 5000;
+    private static final int SERVER_PORT = 5050;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -29,27 +29,25 @@ public class Client {
             // 1. サーバーからのゲーム状態の受信
             // 2. ユーザーからの入力の受付
             // 3. サーバーへのコマンド送信
-            while(true){
-                // ゲーム中
-                String str;
-                 Scanner sc=new Scanner(System.in);
-                while(true){
-                    str=sc.nextLine();
-                    if(str.equals("あなたのターンです!\n")) break;
-                }
-                //自分のターンなら
-                //System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
-                 str=sc.nextLine();
-                 out.println(str);
-                str=in.readLine();
-               System.out.println(str);
-                String[] parts = str.trim().split(" ");
-                if(parts[0].equals("勝者:")) break;
+            boolean my_turn = false;
+            Scanner sc = new Scanner(System.in);
 
-                
-                
-                //勝敗が決まった
-                //break;
+            while (true) {
+                String str_server = in.readLine();
+                System.out.println(str_server);
+
+                if (str_server.equals("あなたのターンです！")) {
+                    my_turn = true;
+                }
+
+                if (my_turn) {
+                    //System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
+                    String str_client = sc.nextLine();
+                    out.println(str_client);
+                    my_turn = false;
+                }
+
+                if (str_server.startsWith("勝者:")) break;
             }
 
         } catch (IOException e) {

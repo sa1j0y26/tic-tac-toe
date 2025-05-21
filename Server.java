@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.io.*;
 
 public class Server {
-    private static final int PORT = 5000;
+    private static final int PORT = 5050;
     private ServerSocket serverSocket;
     private GameBoard gameBoard;
     private List<ClientHandler> clients;
@@ -106,7 +106,11 @@ class ClientHandler extends Thread {
                 //自分のターンまで待機
                 while(server.getCurrentTurn() != playerId && !server.isGameOver()){
                     sendMessage("相手が入力中...");
-                    Thread.sleep(1000);
+                    try{
+                        Thread.sleep(1000);
+                    }catch(InterruptedException e){
+                        e.printStackTrace();
+                    }
                 }
 
                 if(server.isGameOver()){
@@ -141,8 +145,11 @@ class ClientHandler extends Thread {
                     }
                 }
             }
-            
-            socket.close()
+            try{
+                socket.close();
+            }catch(IOException e){
+                e.printStackTrace();
+            }
             
         } catch (IOException e) {
             System.out.println("プレイヤー " + playerId + " との通信でエラー: " + e.getMessage());
@@ -176,7 +183,11 @@ class ClientHandler extends Thread {
                     if (winner > 0) {
                         server.broadcast("勝者: プレイヤー " + winner);
                         server.setGameOver(true);
-                        socket.close(); //通信終了
+                        try{
+                            socket.close(); //通信終了
+                        }catch(IOException e){
+                            e.printStackTrace();
+                        }
                         return; 
                     } else {
                         server.switchTurn();
@@ -217,7 +228,11 @@ class ClientHandler extends Thread {
                     if (winner > 0) {
                         server.broadcast("勝者: プレイヤー " + winner);
                         server.setGameOver(true);
-                        socket.close(); //通信終了
+                        try{
+                            socket.close(); //通信終了
+                        }catch(IOException e){
+                            e.printStackTrace();
+                        }
                         return; 
                     } else {
                         server.switchTurn();
