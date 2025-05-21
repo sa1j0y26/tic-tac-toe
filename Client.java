@@ -31,11 +31,15 @@ public class Client {
             // 3. サーバーへのコマンド送信
             while(true){
                 // ゲーム中
-
-                //自分のターンなら
-                System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
+                String str;
                  Scanner sc=new Scanner(System.in);
-                 String str=sc.nextLine();
+                while(true){
+                    str=sc.nextLine();
+                    if(str.equals("あなたのターンです!\n")) break;
+                }
+                //自分のターンなら
+                //System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
+                 str=sc.nextLine();
                  out.println(str);
                 str=in.readLine();
                System.out.println(str);
