@@ -190,6 +190,7 @@ class ClientHandler extends Thread {
                         }
                         return; 
                     } else {
+                        sendMessage("ターン終了");
                         server.switchTurn();
                         server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn()); 
                     }
@@ -235,6 +236,7 @@ class ClientHandler extends Thread {
                         }
                         return; 
                     } else {
+                        sendMessage("ターン終了");
                         server.switchTurn();
                         server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn());
                     }
