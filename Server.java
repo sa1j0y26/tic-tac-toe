@@ -104,8 +104,10 @@ class ClientHandler extends Thread {
             while(!server.isGameOver()){
 
                 //自分のターンまで待機
-                while(server.getCurrentTurn() != playerId && !server.isGameOver()){
+                if(server.getCurrentTurn() != playerId && !server.isGameOver()){
                     sendMessage("相手が入力中...");
+                }
+                while(server.getCurrentTurn() != playerId && !server.isGameOver()){
                     try{
                         Thread.sleep(1000);
                     }catch(InterruptedException e){
@@ -120,30 +122,29 @@ class ClientHandler extends Thread {
 
                 sendMessage("あなたのターンです！");
 
-                String input;
-                while ((input = in.readLine()) != null) {
+                // 1回だけコマンドを受け付けて処理
+                String input = in.readLine();
+                if (input != null) {
                     input = input.trim();
-                    if (input.isEmpty()) continue;
-                    
-                    String[] parts = input.split(" ");
-                    String command = parts[0].toUpperCase();
-                    
-
-                    switch (command) {
-
-                        case "PLACE":
-                            handlePlace(parts);
-                            break;
-                        case "MOVE":
-                            handleMove(parts);
-                            break;
-                        case "BOARD":
-                            out.println(gameBoard.getBoardState());
-                            break;
-                        default:
-                            out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
+                    if (!input.isEmpty()) {
+                        String[] parts = input.split(" ");
+                        String command = parts[0].toUpperCase();
+                        switch (command) {
+                            case "PLACE":
+                                handlePlace(parts);
+                                break;
+                            case "MOVE":
+                                handleMove(parts);
+                                break;
+                            case "BOARD":
+                                out.println(gameBoard.getBoardState());
+                                break;
+                            default:
+                                out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
+                        }
                     }
                 }
+                // ここでターン終了、次のターンへ
             }
             try{
                 socket.close();
@@ -190,7 +191,6 @@ class ClientHandler extends Thread {
                         }
                         return; 
                     } else {
-                        sendMessage("ターン終了");
                         server.switchTurn();
                         server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn()); 
                     }

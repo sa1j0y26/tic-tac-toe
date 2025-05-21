@@ -33,23 +33,31 @@ public class Client {
             Scanner sc = new Scanner(System.in);
 
             while (true) {
-                String str_server = in.readLine();
-                System.out.println(str_server);
-
-                if (str_server.equals("あなたのターンです！")) {
-                    my_turn = true;
+                String str_server;
+                // サーバからのメッセージを連続で受信し、"あなたのターンです！"が来るまで全て表示
+                while ((str_server = in.readLine()) != null) {
+                    System.out.println(str_server);
+                    if (str_server.equals("あなたのターンです！")) {
+                        my_turn = true;
+                        break;
+                    }
+                    // 勝者が決まったら終了
+                    if (str_server.startsWith("勝者:")) return;
                 }
 
                 if (my_turn) {
-                    //System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
-                    String str_client = sc.nextLine();
-                    out.println(str_client);
+                    while (true) {
+                        String str_client = sc.nextLine();
+                        if (str_client.trim().equalsIgnoreCase("HELP")) {
+                            System.out.println("<操作方法>\nボードの状態を確認する: BOARD\nコマを置く: PLACE x y size\nコマを動かす: MOVE fromX fromY toX toY");
+                            continue;
+                        }
+                        out.println(str_client);
+                        break;
+                    }
                     my_turn = false;
                 }
-
-                if (str_server.startsWith("勝者:")) break;
             }
-
         } catch (IOException e) {
             System.out.println("通信でエラーが発生しました: " + e.getMessage());
         } finally {
