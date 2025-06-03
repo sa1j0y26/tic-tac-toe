@@ -106,6 +106,7 @@ class ClientHandler extends Thread {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             out.println("プレイヤー" + playerId + " として接続しました。");
+            sendPlayerPiecesInfo();
 
             // チャット/履歴コマンド常時受付用スレッド
             Thread chatThread = new Thread(() -> {
@@ -208,6 +209,17 @@ class ClientHandler extends Thread {
         }
     }
 
+    private void sendPlayerPiecesInfo() {
+        Map<Integer, Integer> info = gameBoard.getPlayerPiecesInfo(playerId);
+        StringBuilder sb = new StringBuilder();
+        sb.append("PIECES:");
+        for (int size = 1; size <= 3; size++) {
+            if (size > 1) sb.append(",");
+            sb.append(size).append(":").append(info.getOrDefault(size, 0));
+        }
+        sendMessage(sb.toString());
+    }
+
     private void handlePlace(String[] parts) {
         if (server.getCurrentTurn() != playerId) {
             out.println("現在はあなたの番ではありません。");
@@ -230,6 +242,7 @@ class ClientHandler extends Thread {
                 if (gameBoard.canPlacePiece(x, y, piece)) {
                     gameBoard.placePiece(x, y, piece);
                     server.broadcast("BOARD\n" + gameBoard.getBoardState());
+                    sendPlayerPiecesInfo();
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
@@ -275,6 +288,7 @@ class ClientHandler extends Thread {
                 if (gameBoard.canMovePiece(fromX, fromY, toX, toY, playerId)) {
                     gameBoard.movePiece(fromX, fromY, toX, toY);
                     server.broadcast("BOARD\n" + gameBoard.getBoardState());
+                    sendPlayerPiecesInfo();
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
