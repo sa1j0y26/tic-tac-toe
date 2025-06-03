@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class GameBoard {
     private static final int BOARD_SIZE = 3;
@@ -46,8 +48,11 @@ public class GameBoard {
     }
 
     public boolean canPlacePiece(int x, int y, Piece piece) {
-        // TODO: コマを置けるかどうかの判定ロジックを実装
+        // コマを置けるかどうかの判定＋持ち駒チェック
         if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE) {
+            return false;
+        }
+        if (!hasPiece(piece.getOwner(), piece.getSize())) {
             return false;
         }
         List<Piece> stack = board.get(y).get(x);
@@ -56,7 +61,7 @@ public class GameBoard {
         }
         if (stack.size() > 0 && stack.get(stack.size() - 1).getSize() >= piece.getSize()) {
             return false;
-        }else{
+        } else {
             return true;
         }
     }
@@ -86,8 +91,9 @@ public class GameBoard {
     }
 
     public void placePiece(int x, int y, Piece piece) {
-        // TODO: コマを置く処理を実装
+        // コマを置く処理＋持ち駒消費
         board.get(y).get(x).add(piece);
+        usePiece(piece.getOwner(), piece.getSize());
     }
 
     public void movePiece(int fromX, int fromY, int toX, int toY) {
@@ -168,5 +174,38 @@ public class GameBoard {
         }
         if (diagWin2) return diagOwner2;
         return -1;
+    }
+
+    // 指定プレイヤーが指定サイズのコマを持っているか
+    public boolean hasPiece(int player, int size) {
+        List<List<Piece>> playerPieces = (player == 1) ? player1Pieces : player2Pieces;
+        int idx = size - 1;
+        if (idx < 0 || idx >= playerPieces.size()) return false;
+        return !playerPieces.get(idx).isEmpty();
+    }
+
+    // 指定プレイヤーの指定サイズのコマを1つ消費
+    public void usePiece(int player, int size) {
+        List<List<Piece>> playerPieces = (player == 1) ? player1Pieces : player2Pieces;
+        int idx = size - 1;
+        if (idx < 0 || idx >= playerPieces.size()) return;
+        if (!playerPieces.get(idx).isEmpty()) {
+            playerPieces.get(idx).remove(0);
+        }
+    }
+
+    // 指定プレイヤーの持ち駒情報を返す（サイズ→残数のMap）
+    public Map<Integer, Integer> getPlayerPiecesInfo(int player) {
+        List<List<Piece>> playerPieces = (player == 1) ? player1Pieces : player2Pieces;
+        Map<Integer, Integer> info = new HashMap<>();
+        for (int size = 1; size <= 3; size++) {
+            int idx = size - 1;
+            if (idx >= 0 && idx < playerPieces.size()) {
+                info.put(size, playerPieces.get(idx).size());
+            } else {
+                info.put(size, 0);
+            }
+        }
+        return info;
     }
 } 
