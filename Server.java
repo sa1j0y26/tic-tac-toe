@@ -11,6 +11,7 @@ public class Server {
     private List<ClientHandler> clients;
     private int currentTurn = 1;
     private boolean gameOver = false;
+    protected List<String> chatHistory = Collections.synchronizedList(new ArrayList<>());
 
     public Server() {
         try {
@@ -70,7 +71,11 @@ public class Server {
     public synchronized void setGameOver(boolean over){
         gameOver = over;
     }
-  
+
+    public synchronized void addChat(String msg) {
+        chatHistory.add(msg);
+    }
+
     public static void main(String[] args) {
         Server server = new Server();
         server.start();
@@ -85,6 +90,8 @@ class ClientHandler extends Thread {
     private GameBoard gameBoard;
     private BufferedReader in;
     private PrintWriter out;
+    private volatile boolean running = true;
+    private volatile String latestGameCommand = null;
 
     public ClientHandler(Socket socket, int playerId, GameBoard gameBoard, Server server) {
         this.socket = socket;
@@ -100,10 +107,47 @@ class ClientHandler extends Thread {
             out = new PrintWriter(socket.getOutputStream(), true);
             out.println("プレイヤー" + playerId + " として接続しました。");
 
+            // チャット/履歴コマンド常時受付用スレッド
+            Thread chatThread = new Thread(() -> {
+                try {
+                    String input;
+                    while (running && (input = in.readLine()) != null) {
+                        input = input.trim();
+                        if (input.isEmpty()) continue;
+                        if (input.startsWith("/chat ")) {
+                            String chatMsg = "プレイヤー" + playerId + ": " + input.substring(6);
+                            server.addChat(chatMsg);
+                            server.broadcast("CHAT:" + chatMsg);
+                        } else if (input.equals("/history")) {
+                            StringBuilder sb = new StringBuilder();
+                            synchronized(server.chatHistory) {
+                                for (String chat : server.chatHistory) {
+                                    sb.append(chat).append("\n");
+                                }
+                            }
+                            sendMessage("HISTORY:" + sb.toString());
+                        } else {
+                            // ゲームコマンドは自分のターン以外なら警告
+                            if (server.getCurrentTurn() != playerId) {
+                                sendMessage("現在はあなたの番ではありません。");
+                            } else {
+                                synchronized (this) {
+                                    if (latestGameCommand == null) {
+                                        latestGameCommand = input;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    // 通信切断時
+                }
+            });
+            chatThread.setDaemon(true);
+            chatThread.start();
+
             //ターン管理
             while(!server.isGameOver()){
-
-                //自分のターンまで待機
                 if(server.getCurrentTurn() != playerId && !server.isGameOver()){
                     sendMessage("相手が入力中...");
                 }
@@ -122,30 +166,37 @@ class ClientHandler extends Thread {
 
                 sendMessage("あなたのターンです！");
 
-                // 1回だけコマンドを受け付けて処理
-                String input = in.readLine();
+                // ゲームコマンドが入力されるまで待機
+                String input = null;
+                while (input == null && running) {
+                    synchronized (chatThread) {
+                        input = latestGameCommand;
+                        latestGameCommand = null;
+                    }
+                    if (input == null) {
+                        try { Thread.sleep(100); } catch (InterruptedException e) {}
+                    }
+                }
                 if (input != null) {
-                    input = input.trim();
-                    if (!input.isEmpty()) {
-                        String[] parts = input.split(" ");
-                        String command = parts[0].toUpperCase();
-                        switch (command) {
-                            case "PLACE":
-                                handlePlace(parts);
-                                break;
-                            case "MOVE":
-                                handleMove(parts);
-                                break;
-                            case "BOARD":
-                                out.println(gameBoard.getBoardState());
-                                break;
-                            default:
-                                out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
-                        }
+                    String[] parts = input.split(" ");
+                    String command = parts[0].toUpperCase();
+                    switch (command) {
+                        case "PLACE":
+                            handlePlace(parts);
+                            break;
+                        case "MOVE":
+                            handleMove(parts);
+                            break;
+                        case "BOARD":
+                            out.println(gameBoard.getBoardState());
+                            break;
+                        default:
+                            out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
                     }
                 }
                 // ここでターン終了、次のターンへ
             }
+            running = false;
             try{
                 socket.close();
             }catch(IOException e){
