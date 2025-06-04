@@ -1,7 +1,5 @@
 import java.net.*;
 import java.util.*;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.io.*;
 
 public class Server {
@@ -246,7 +244,7 @@ class ClientHandler extends Thread {
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
-                        server.broadcast("勝者: プレイヤー " + winner);
+                        server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
                             socket.close(); //通信終了
@@ -292,7 +290,7 @@ class ClientHandler extends Thread {
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
-                        server.broadcast("勝者: プレイヤー " + winner);
+                        server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
                             socket.close(); //通信終了

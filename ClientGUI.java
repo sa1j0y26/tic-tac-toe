@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -38,6 +37,8 @@ public class ClientGUI extends JFrame {
     // 手持ちコマの最新状態
     private Map<Integer, Integer> latestPieces = new HashMap<>();
     private JTabbedPane tabbedPane;
+    // フィールド追加
+    private int myPlayerId = -1;
 
     public ClientGUI() {
         setTitle("Tic-Tac-Toe クライアント");
@@ -78,7 +79,7 @@ public class ClientGUI extends JFrame {
                 btn.setFont(boardFont);
                 btn.setPreferredSize(new Dimension(100, 100));
                 int fx = x, fy = y;
-                btn.addActionListener(e -> selectCell(fx, fy));
+                btn.addActionListener(_ -> selectCell(fx, fy));
                 boardButtons[y][x] = btn;
                 boardPanel.add(btn);
             }
@@ -98,7 +99,7 @@ public class ClientGUI extends JFrame {
                 JButton pieceBtn = new JButton(sizeToStr(size));
                 pieceBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                 int pieceSize = size;
-                pieceBtn.addActionListener(e -> selectPiece(pieceBtn, pieceSize));
+                pieceBtn.addActionListener(_ -> selectPiece(pieceBtn, pieceSize));
                 pieceButtons.add(pieceBtn);
                 piecePanel.add(pieceBtn);
             }
@@ -137,26 +138,26 @@ public class ClientGUI extends JFrame {
         setContentPane(tabbedPane);
 
         // PLACEボタン
-        placeButton.addActionListener(e -> {
+        placeButton.addActionListener(_ -> {
             moveMode = false;
             clearMoveSelection();
             sendPlaceCommand();
         });
         // MOVEボタン
-        moveButton.addActionListener(e -> {
+        moveButton.addActionListener(_ -> {
             moveMode = true;
             clearPlaceSelection();
             JOptionPane.showMessageDialog(this, "移動元マスを選択してください");
         });
 
         //HELPボタン
-        helpButton.addActionListener(e ->{
+        helpButton.addActionListener(_ ->{
             chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
 
         // チャット送信
-        sendButton.addActionListener(e -> sendChat());
-        chatInput.addActionListener(e -> sendChat());
+        sendButton.addActionListener(_ -> sendChat());
+        chatInput.addActionListener(_ -> sendChat());
 
         // サーバ接続
         connectToServer();
@@ -219,7 +220,6 @@ public class ClientGUI extends JFrame {
                 try {
                     String line;
                     StringBuilder boardStr = new StringBuilder();
-                    boolean boardMode = false;
                     while ((line = in.readLine()) != null) {
                         // ゲームタブには全てappend
                         if (line.startsWith("CHAT:")) {
@@ -237,6 +237,24 @@ public class ClientGUI extends JFrame {
                             updateBoard(boardStr.toString());
                         } else if (line.startsWith("PIECES:")) {
                             updatePiecesPanel(line);
+                        } else if (line.contains("勝者: プレイヤー")) {
+                            // 勝者メッセージを特別に表示
+                            JOptionPane.showMessageDialog(this, line + "\nおめでとうございます！", "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
+                            chatArea.append("\n=== " + line + " ===\n");
+                        } else if (line.startsWith("プレイヤー") && line.contains("として接続しました。")) {
+                            // 例: "プレイヤー1 として接続しました。"
+                            String[] parts = line.split(" ");
+                            try {
+                                myPlayerId = Integer.parseInt(parts[0].replace("プレイヤー", ""));
+                            } catch (NumberFormatException e) {
+                                myPlayerId = -1;
+                            }
+                            chatArea.append(line + "\n");
+                        } else if (line.startsWith("WINNER ")) {
+                            int winnerId = Integer.parseInt(line.substring(7).trim());
+                            String result = (winnerId == myPlayerId) ? "あなたの勝ちです！おめでとう！" : "あなたの負けです…";
+                            JOptionPane.showMessageDialog(this, result, "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
+                            chatArea.append("\n=== " + result + " ===\n");
                         } else {
                             // システムメッセージはゲームタブだけにappend
                             chatArea.append(line + "\n");
@@ -249,6 +267,7 @@ public class ClientGUI extends JFrame {
 
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "サーバーに接続できませんでした");
+            System.exit(0);
         }
     }
 
@@ -350,7 +369,7 @@ public class ClientGUI extends JFrame {
                     JButton pieceBtn = new JButton(sizeToStr(size));
                     pieceBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                     int pieceSize = size;
-                    pieceBtn.addActionListener(e -> selectPiece(pieceBtn, pieceSize));
+                    pieceBtn.addActionListener(_ -> selectPiece(pieceBtn, pieceSize));
                     pieceButtons.add(pieceBtn);
                     piecePanel.add(pieceBtn);
                 }
