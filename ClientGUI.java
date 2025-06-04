@@ -259,7 +259,27 @@ public class ClientGUI extends JFrame {
         for (int y = 0; y < 3; y++) {
             String[] cells = lines[y + 1].split(" ");
             for (int x = 0; x < 3; x++) {
-                boardButtons[y][x].setText(cells[x]);
+                String cell = cells[x];
+                JButton btn = boardButtons[y][x];
+
+                if (cell.equals("0")) {
+                    btn.setText("");
+                } else {
+                    int player = Integer.parseInt(cell.substring(0, 1)); // 1 or 2
+                    int size = Integer.parseInt(cell.substring(1));      // 1, 2, 3
+
+                    String circle = player == 1 ? "🔴" : "🔵";
+                    btn.setText(circle); 
+                    int fontSize;
+                    switch (size) {
+                        case 1: fontSize = 20; break;  // 小
+                        case 2: fontSize = 35; break;  // 中
+                        case 3: fontSize = 50; break;  // 大
+                        default: fontSize = 20;
+                    }
+                    btn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
+                }
+
             }
         }
     }
