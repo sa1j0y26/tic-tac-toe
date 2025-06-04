@@ -122,6 +122,8 @@ public class ClientGUI extends JFrame {
         tabbedPane.addTab("ゲーム", gamePanel);
         // タブ2: 履歴（チャット履歴だけ大きく表示）
         chatHistoryArea = new JTextArea();
+        chatInput.setPreferredSize(new Dimension(500, 35)); //チャット入力欄サイズ初期値
+        chatInput.setMaximumSize(new Dimension(500, 35)); //チャット入力欄サイズ最大値
         chatHistoryArea.setEditable(false);
         JScrollPane historyScroll = new JScrollPane(chatHistoryArea);
         JPanel historyPanel = new JPanel(new BorderLayout());
