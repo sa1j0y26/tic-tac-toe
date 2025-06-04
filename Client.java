@@ -1,4 +1,4 @@
-import java.net.Socket;
+import java.net.*;
 import java.io.*;
 import java.util.*;
 
@@ -24,9 +24,10 @@ public class Client {
 
 
     public void start() {
+        Scanner sc = null;
         try {
             List<String> chatHistory = Collections.synchronizedList(new ArrayList<>());
-            Scanner sc = new Scanner(System.in);
+            sc = new Scanner(System.in);
 
             // サーバからのメッセージ受信スレッド
             Thread receiveThread = new Thread(() -> {
@@ -78,6 +79,7 @@ public class Client {
             } catch (IOException e) {
                 System.out.println("ソケットのクローズに失敗しました: " + e.getMessage());
             }
+            if (sc != null) sc.close();
         }
     }
 

@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -78,7 +77,7 @@ public class ClientGUI extends JFrame {
                 btn.setFont(boardFont);
                 btn.setPreferredSize(new Dimension(100, 100));
                 int fx = x, fy = y;
-                btn.addActionListener(e -> selectCell(fx, fy));
+                btn.addActionListener(_ -> selectCell(fx, fy));
                 boardButtons[y][x] = btn;
                 boardPanel.add(btn);
             }
@@ -98,7 +97,7 @@ public class ClientGUI extends JFrame {
                 JButton pieceBtn = new JButton(sizeToStr(size));
                 pieceBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                 int pieceSize = size;
-                pieceBtn.addActionListener(e -> selectPiece(pieceBtn, pieceSize));
+                pieceBtn.addActionListener(_ -> selectPiece(pieceBtn, pieceSize));
                 pieceButtons.add(pieceBtn);
                 piecePanel.add(pieceBtn);
             }
@@ -137,26 +136,26 @@ public class ClientGUI extends JFrame {
         setContentPane(tabbedPane);
 
         // PLACEボタン
-        placeButton.addActionListener(e -> {
+        placeButton.addActionListener(_ -> {
             moveMode = false;
             clearMoveSelection();
             sendPlaceCommand();
         });
         // MOVEボタン
-        moveButton.addActionListener(e -> {
+        moveButton.addActionListener(_ -> {
             moveMode = true;
             clearPlaceSelection();
             JOptionPane.showMessageDialog(this, "移動元マスを選択してください");
         });
 
         //HELPボタン
-        helpButton.addActionListener(e ->{
+        helpButton.addActionListener(_ ->{
             chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
 
         // チャット送信
-        sendButton.addActionListener(e -> sendChat());
-        chatInput.addActionListener(e -> sendChat());
+        sendButton.addActionListener(_ -> sendChat());
+        chatInput.addActionListener(_ -> sendChat());
 
         // サーバ接続
         connectToServer();
@@ -219,7 +218,6 @@ public class ClientGUI extends JFrame {
                 try {
                     String line;
                     StringBuilder boardStr = new StringBuilder();
-                    boolean boardMode = false;
                     while ((line = in.readLine()) != null) {
                         // ゲームタブには全てappend
                         if (line.startsWith("CHAT:")) {
@@ -249,6 +247,7 @@ public class ClientGUI extends JFrame {
 
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "サーバーに接続できませんでした");
+            System.exit(0);
         }
     }
 
@@ -350,7 +349,7 @@ public class ClientGUI extends JFrame {
                     JButton pieceBtn = new JButton(sizeToStr(size));
                     pieceBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
                     int pieceSize = size;
-                    pieceBtn.addActionListener(e -> selectPiece(pieceBtn, pieceSize));
+                    pieceBtn.addActionListener(_ -> selectPiece(pieceBtn, pieceSize));
                     pieceButtons.add(pieceBtn);
                     piecePanel.add(pieceBtn);
                 }
