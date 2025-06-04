@@ -244,7 +244,7 @@ class ClientHandler extends Thread {
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
-                        server.broadcast("勝者: プレイヤー " + winner);
+                        server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
                             socket.close(); //通信終了
@@ -290,7 +290,7 @@ class ClientHandler extends Thread {
 
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
-                        server.broadcast("勝者: プレイヤー " + winner);
+                        server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
                             socket.close(); //通信終了

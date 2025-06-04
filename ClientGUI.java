@@ -37,6 +37,8 @@ public class ClientGUI extends JFrame {
     // 手持ちコマの最新状態
     private Map<Integer, Integer> latestPieces = new HashMap<>();
     private JTabbedPane tabbedPane;
+    // フィールド追加
+    private int myPlayerId = -1;
 
     public ClientGUI() {
         setTitle("Tic-Tac-Toe クライアント");
@@ -235,6 +237,24 @@ public class ClientGUI extends JFrame {
                             updateBoard(boardStr.toString());
                         } else if (line.startsWith("PIECES:")) {
                             updatePiecesPanel(line);
+                        } else if (line.contains("勝者: プレイヤー")) {
+                            // 勝者メッセージを特別に表示
+                            JOptionPane.showMessageDialog(this, line + "\nおめでとうございます！", "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
+                            chatArea.append("\n=== " + line + " ===\n");
+                        } else if (line.startsWith("プレイヤー") && line.contains("として接続しました。")) {
+                            // 例: "プレイヤー1 として接続しました。"
+                            String[] parts = line.split(" ");
+                            try {
+                                myPlayerId = Integer.parseInt(parts[0].replace("プレイヤー", ""));
+                            } catch (NumberFormatException e) {
+                                myPlayerId = -1;
+                            }
+                            chatArea.append(line + "\n");
+                        } else if (line.startsWith("WINNER ")) {
+                            int winnerId = Integer.parseInt(line.substring(7).trim());
+                            String result = (winnerId == myPlayerId) ? "あなたの勝ちです！おめでとう！" : "あなたの負けです…";
+                            JOptionPane.showMessageDialog(this, result, "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
+                            chatArea.append("\n=== " + result + " ===\n");
                         } else {
                             // システムメッセージはゲームタブだけにappend
                             chatArea.append(line + "\n");
