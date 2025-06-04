@@ -4,7 +4,7 @@ import java.util.*;
 
 public class Client {
     private static final String SERVER_IP = "localhost";
-    private static final int SERVER_PORT = 5000;
+    private static final int SERVER_PORT = 5050;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -25,34 +25,52 @@ public class Client {
 
     public void start() {
         try {
-            // TODO: サーバーとの通信処理を実装
-            // 1. サーバーからのゲーム状態の受信
-            // 2. ユーザーからの入力の受付
-            // 3. サーバーへのコマンド送信
-            while(true){
-                // ゲーム中
-                String str;
-                 Scanner sc=new Scanner(System.in);
-                while(true){
-                    str=sc.nextLine();
-                    if(str.equals("あなたのターンです!\n")) break;
+            List<String> chatHistory = Collections.synchronizedList(new ArrayList<>());
+            Scanner sc = new Scanner(System.in);
+
+            // サーバからのメッセージ受信スレッド
+            Thread receiveThread = new Thread(() -> {
+                try {
+                    String str_server;
+                    while ((str_server = in.readLine()) != null) {
+                        if (str_server.startsWith("CHAT:")) {
+                            String chatMsg = str_server.substring(5);
+                            chatHistory.add(chatMsg);
+                            System.out.println("[チャット] " + chatMsg);
+                        } else if (str_server.startsWith("HISTORY:")) {
+                            // サーバから履歴が送られてきた場合
+                            System.out.println("--- チャット履歴 ---");
+                            String[] lines = str_server.substring(8).split("\\\n");
+                            for (String line : lines) {
+                                System.out.println(line);
+                            }
+                            System.out.println("------------------");
+                        } else {
+                            System.out.println(str_server);
+                        }
+                    }
+                } catch (IOException e) {
+                    System.out.println("サーバとの通信が切断されました: " + e.getMessage());
                 }
-                //自分のターンなら
-                //System.out.println("行動を選択してください: ボードの状態を確認する:BOARD コマを置く:PLACE x y size コマを動かす:MOVE fromX fromY toX toY");
-                 str=sc.nextLine();
-                 out.println(str);
-                str=in.readLine();
-               System.out.println(str);
-                String[] parts = str.trim().split(" ");
-                if(parts[0].equals("勝者:")) break;
+            });
+            receiveThread.setDaemon(true);
+            receiveThread.start();
 
-                
-                
-                //勝敗が決まった
-                //break;
+            // 標準入力受付スレッド
+            while (true) {
+                String input = sc.nextLine();
+                if (input.trim().equalsIgnoreCase("HELP")) {
+                    System.out.println("<操作方法>\nボードの状態を確認する: BOARD\nコマを置く: PLACE x y size\nコマを動かす: MOVE fromX fromY toX toY\nチャット送信: /chat メッセージ\nチャット履歴参照: /history");
+                    continue;
+                } else if (input.startsWith("/chat ")) {
+                    out.println(input);
+                } else if (input.equals("/history")) {
+                    out.println(input);
+                } else {
+                    out.println(input);
+                }
             }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("通信でエラーが発生しました: " + e.getMessage());
         } finally {
             try {
