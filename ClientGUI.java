@@ -115,10 +115,10 @@ public class ClientGUI extends JFrame {
         commandPanel.setLayout(new FlowLayout());
         placeButton = new JButton("PLACE");
         moveButton = new JButton("MOVE");
-        helpButton = new JButton("HELP");//
+        helpButton = new JButton("HELP");
         commandPanel.add(placeButton);
         commandPanel.add(moveButton);
-        commandPanel.add(helpButton);//
+        commandPanel.add(helpButton);
         gamePanel.add(commandPanel);
 
         // タブ1: ゲーム画面
@@ -151,6 +151,7 @@ public class ClientGUI extends JFrame {
         helpButton.addActionListener(e ->{
             chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
+
 
         // チャット送信
         sendButton.addActionListener(e -> sendChat());
