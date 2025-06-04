@@ -125,6 +125,8 @@ public class ClientGUI extends JFrame {
         tabbedPane.addTab("ゲーム", gamePanel);
         // タブ2: 履歴（チャット履歴だけ大きく表示）
         chatHistoryArea = new JTextArea();
+        chatInput.setPreferredSize(new Dimension(500, 35)); //チャット入力欄サイズ初期値
+        chatInput.setMaximumSize(new Dimension(500, 35)); //チャット入力欄サイズ最大値
         chatHistoryArea.setEditable(false);
         JScrollPane historyScroll = new JScrollPane(chatHistoryArea);
         JPanel historyPanel = new JPanel(new BorderLayout());
@@ -151,7 +153,6 @@ public class ClientGUI extends JFrame {
         helpButton.addActionListener(e ->{
             chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
-
 
         // チャット送信
         sendButton.addActionListener(e -> sendChat());
@@ -266,7 +267,26 @@ public class ClientGUI extends JFrame {
         for (int y = 0; y < 3; y++) {
             String[] cells = lines[y + 1].split(" ");
             for (int x = 0; x < 3; x++) {
-                boardButtons[y][x].setText(cells[x]);
+                String cell = cells[x];
+                JButton btn = boardButtons[y][x];
+
+                if (cell.equals("0")) {
+                    btn.setText("");
+                } else {
+                    int player = Integer.parseInt(cell.substring(0, 1)); // 1 or 2
+                    int size = Integer.parseInt(cell.substring(1));      // 1, 2, 3
+
+                    String circle = player == 1 ? "🔴" : "🔵";
+                    btn.setText(circle); 
+                    int fontSize;
+                    switch (size) {
+                        case 1: fontSize = 20; break;  // 小
+                        case 2: fontSize = 35; break;  // 中
+                        case 3: fontSize = 50; break;  // 大
+                        default: fontSize = 20;
+                    }
+                    btn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
+                }
             }
         }
     }
