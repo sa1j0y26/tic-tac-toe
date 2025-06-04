@@ -287,7 +287,7 @@ class ClientHandler extends Thread {
             synchronized (gameBoard) {
                 if (gameBoard.canMovePiece(fromX, fromY, toX, toY, playerId)) {
                     gameBoard.movePiece(fromX, fromY, toX, toY);
-                    server.broadcast("BOARD\n" + gameBoard.getBoardState());
+                    server.broadcast(gameBoard.getBoardState());
                     sendPlayerPiecesInfo();
 
                     int winner = gameBoard.checkWinner();
