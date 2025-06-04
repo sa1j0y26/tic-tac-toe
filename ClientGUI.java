@@ -22,6 +22,7 @@ public class ClientGUI extends JFrame {
     private JPanel commandPanel;
     private JButton placeButton;
     private JButton moveButton;
+    private JButton helpButton;
     // 通信
     private BufferedReader in;
     private PrintWriter out;
@@ -114,8 +115,10 @@ public class ClientGUI extends JFrame {
         commandPanel.setLayout(new FlowLayout());
         placeButton = new JButton("PLACE");
         moveButton = new JButton("MOVE");
+        helpButton = new JButton("HELP");
         commandPanel.add(placeButton);
         commandPanel.add(moveButton);
+        commandPanel.add(helpButton);
         gamePanel.add(commandPanel);
 
         // タブ1: ゲーム画面
@@ -144,6 +147,11 @@ public class ClientGUI extends JFrame {
             moveMode = true;
             clearPlaceSelection();
             JOptionPane.showMessageDialog(this, "移動元マスを選択してください");
+        });
+
+        //HELPボタン
+        helpButton.addActionListener(e ->{
+            chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
 
         // チャット送信
@@ -279,7 +287,6 @@ public class ClientGUI extends JFrame {
                     }
                     btn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
                 }
-
             }
         }
     }
