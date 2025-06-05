@@ -144,7 +144,7 @@ class ClientHandler extends Thread {
         }
     }
 
-    private void handleGameLoop(Thread chatThread) {
+    private void handleGameLoop(Thread commandListener) {
         while(!server.isGameOver()){
             if(server.getCurrentTurn() != playerId && !server.isGameOver()){
                 sendMessage("相手が入力中...");
@@ -163,7 +163,7 @@ class ClientHandler extends Thread {
             sendMessage("あなたのターンです！");
             String input = null;
             while (input == null && running) {
-                synchronized (chatThread) {
+                synchronized (commandListener) {
                     input = latestGameCommand;
                     latestGameCommand = null;
                 }

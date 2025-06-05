@@ -5,39 +5,30 @@ import java.net.*;
 import java.util.*;
 
 public class ClientGUI extends JFrame {
-    // チャット
     private JTextArea chatArea;
     private JTextArea chatHistoryArea;
     private JTextField chatInput;
     private JButton sendButton;
-    // ボード
     private JPanel boardPanel;
     private JButton[][] boardButtons = new JButton[3][3];
-    // 手持ちコマ
     private JPanel piecePanel;
     private JScrollPane pieceScrollPane;
     private java.util.List<JButton> pieceButtons = new java.util.ArrayList<>();
-    // コマンド
     private JPanel commandPanel;
     private JButton placeButton;
     private JButton moveButton;
     private JButton helpButton;
-    // 通信
     private BufferedReader in;
     private PrintWriter out;
     private Socket socket;
-    // 選択状態
     private Point selectedCell = null;
     private JButton selectedPieceButton = null;
     private int selectedPieceSize = -1;
-    // MOVE用
     private boolean moveMode = false;
     private Point moveFrom = null;
     private Point moveTo = null;
-    // 手持ちコマの最新状態
     private Map<Integer, Integer> latestPieces = new HashMap<>();
     private JTabbedPane tabbedPane;
-    // フィールド追加
     private int myPlayerId = -1;
 
     public ClientGUI() {
@@ -46,17 +37,14 @@ public class ClientGUI extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         tabbedPane = new JTabbedPane();
-        // ゲーム画面パネル
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
 
-        // チャットエリア
         chatArea = new JTextArea(8, 30);
         chatArea.setEditable(false);
         JScrollPane chatScroll = new JScrollPane(chatArea);
         gamePanel.add(chatScroll);
 
-        // チャット入力
         JPanel chatInputPanel = new JPanel();
         chatInputPanel.setLayout(new BoxLayout(chatInputPanel, BoxLayout.X_AXIS));
         chatInput = new JTextField();
@@ -64,11 +52,8 @@ public class ClientGUI extends JFrame {
         chatInputPanel.add(chatInput);
         chatInputPanel.add(sendButton);
         gamePanel.add(chatInputPanel);
-
-        // 区切り線
         gamePanel.add(new JSeparator());
 
-        // ボード
         boardPanel = new JPanel(new GridLayout(3, 3, 8, 8));
         boardPanel.setMaximumSize(new Dimension(400, 400));
         boardPanel.setPreferredSize(new Dimension(400, 400));
@@ -86,10 +71,8 @@ public class ClientGUI extends JFrame {
         }
         gamePanel.add(boardPanel);
 
-        // 区切り線
         gamePanel.add(new JSeparator());
 
-        // 手持ちコマリスト
         piecePanel = new JPanel();
         piecePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 2));
         JLabel pieceLabel = new JLabel("手持ちコマ:");
@@ -108,10 +91,8 @@ public class ClientGUI extends JFrame {
         pieceScrollPane.setPreferredSize(new Dimension(400, 60));
         gamePanel.add(pieceScrollPane);
 
-        // 区切り線
         gamePanel.add(new JSeparator());
 
-        // コマンドボタン群
         commandPanel = new JPanel();
         commandPanel.setLayout(new FlowLayout());
         placeButton = new JButton("PLACE");
@@ -122,50 +103,42 @@ public class ClientGUI extends JFrame {
         commandPanel.add(helpButton);
         gamePanel.add(commandPanel);
 
-        // タブ1: ゲーム画面
         tabbedPane.addTab("ゲーム", gamePanel);
-        // タブ2: 履歴（チャット履歴だけ大きく表示）
         chatHistoryArea = new JTextArea();
-        chatInput.setPreferredSize(new Dimension(500, 35)); //チャット入力欄サイズ初期値
-        chatInput.setMaximumSize(new Dimension(500, 35)); //チャット入力欄サイズ最大値
+        chatInput.setPreferredSize(new Dimension(500, 35));
+        chatInput.setMaximumSize(new Dimension(500, 35));
         chatHistoryArea.setEditable(false);
         JScrollPane historyScroll = new JScrollPane(chatHistoryArea);
         JPanel historyPanel = new JPanel(new BorderLayout());
         historyPanel.add(historyScroll, BorderLayout.CENTER);
         tabbedPane.addTab("履歴", historyPanel);
-        tabbedPane.setSelectedIndex(0); // 起動時にゲームタブを選択
+        tabbedPane.setSelectedIndex(0);
 
         setContentPane(tabbedPane);
 
-        // PLACEボタン
         placeButton.addActionListener(_ -> {
             moveMode = false;
             clearMoveSelection();
             sendPlaceCommand();
         });
-        // MOVEボタン
         moveButton.addActionListener(_ -> {
             moveMode = true;
             clearPlaceSelection();
             JOptionPane.showMessageDialog(this, "移動元マスを選択してください");
         });
 
-        //HELPボタン
         helpButton.addActionListener(_ ->{
             chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
         });
 
-        // チャット送信
         sendButton.addActionListener(_ -> sendChat());
         chatInput.addActionListener(_ -> sendChat());
 
-        // サーバ接続
         connectToServer();
     }
 
     private void selectCell(int x, int y) {
         if (moveMode) {
-            // MOVEモード
             if (moveFrom == null) {
                 clearMoveSelection();
                 moveFrom = new Point(x, y);
@@ -177,7 +150,6 @@ public class ClientGUI extends JFrame {
                 sendMoveCommand();
             }
         } else {
-            // PLACEモード
             if (selectedCell != null) {
                 boardButtons[selectedCell.y][selectedCell.x].setBackground(null);
             }
@@ -215,19 +187,16 @@ public class ClientGUI extends JFrame {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
-            // サーバからのメッセージ受信スレッド
             new Thread(() -> {
                 try {
                     String line;
                     StringBuilder boardStr = new StringBuilder();
                     while ((line = in.readLine()) != null) {
-                        // ゲームタブには全てappend
                         if (line.startsWith("CHAT:")) {
                             String chatMsg = line.substring(5);
                             chatArea.append(chatMsg + "\n");
                             chatHistoryArea.append(chatMsg + "\n");
                         } else if (line.startsWith("BOARD")) {
-                            // BOARDメッセージは複数行
                             boardStr.setLength(0);
                             boardStr.append(line).append("\n");
                             for (int i = 0; i < 3; i++) {
@@ -238,11 +207,9 @@ public class ClientGUI extends JFrame {
                         } else if (line.startsWith("PIECES:")) {
                             updatePiecesPanel(line);
                         } else if (line.contains("勝者: プレイヤー")) {
-                            // 勝者メッセージを特別に表示
                             JOptionPane.showMessageDialog(this, line + "\nおめでとうございます！", "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
                             chatArea.append("\n=== " + line + " ===\n");
                         } else if (line.startsWith("プレイヤー") && line.contains("として接続しました。")) {
-                            // 例: "プレイヤー1 として接続しました。"
                             String[] parts = line.split(" ");
                             try {
                                 myPlayerId = Integer.parseInt(parts[0].replace("プレイヤー", ""));
@@ -256,7 +223,6 @@ public class ClientGUI extends JFrame {
                             JOptionPane.showMessageDialog(this, result, "ゲーム終了", JOptionPane.INFORMATION_MESSAGE);
                             chatArea.append("\n=== " + result + " ===\n");
                         } else {
-                            // システムメッセージはゲームタブだけにappend
                             chatArea.append(line + "\n");
                         }
                     }
@@ -280,7 +246,6 @@ public class ClientGUI extends JFrame {
     }
 
     private void updateBoard(String boardStr) {
-        // "BOARD\n0 0 0\n0 0 0\n0 0 0\n" 形式をパース
         String[] lines = boardStr.split("\n");
         if (lines.length < 4) return;
         for (int y = 0; y < 3; y++) {
@@ -292,16 +257,16 @@ public class ClientGUI extends JFrame {
                 if (cell.equals("0")) {
                     btn.setText("");
                 } else {
-                    int player = Integer.parseInt(cell.substring(0, 1)); // 1 or 2
-                    int size = Integer.parseInt(cell.substring(1));      // 1, 2, 3
+                    int player = Integer.parseInt(cell.substring(0, 1));
+                    int size = Integer.parseInt(cell.substring(1));
 
                     String circle = player == 1 ? "🔴" : "🔵";
                     btn.setText(circle); 
                     int fontSize;
                     switch (size) {
-                        case 1: fontSize = 20; break;  // 小
-                        case 2: fontSize = 35; break;  // 中
-                        case 3: fontSize = 50; break;  // 大
+                        case 1: fontSize = 20; break;
+                        case 2: fontSize = 35; break;
+                        case 3: fontSize = 50; break;
                         default: fontSize = 20;
                     }
                     btn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, fontSize));
@@ -345,7 +310,6 @@ public class ClientGUI extends JFrame {
         selectedPieceSize = -1;
     }
 
-    // PIECES:1:2,2:1,3:0 のような形式をパースし、手持ちコマパネルを更新
     private void updatePiecesPanel(String piecesLine) {
         SwingUtilities.invokeLater(() -> {
             latestPieces.clear();
@@ -359,7 +323,6 @@ public class ClientGUI extends JFrame {
                     latestPieces.put(size, count);
                 }
             }
-            // パネルを再構築
             piecePanel.removeAll();
             piecePanel.add(new JLabel("手持ちコマ:"));
             pieceButtons.clear();

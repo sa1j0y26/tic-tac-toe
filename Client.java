@@ -29,7 +29,6 @@ public class Client {
             List<String> chatHistory = Collections.synchronizedList(new ArrayList<>());
             sc = new Scanner(System.in);
 
-            // サーバからのメッセージ受信スレッド
             Thread receiveThread = new Thread(() -> {
                 try {
                     String str_server;
@@ -39,7 +38,6 @@ public class Client {
                             chatHistory.add(chatMsg);
                             System.out.println("[チャット] " + chatMsg);
                         } else if (str_server.startsWith("HISTORY:")) {
-                            // サーバから履歴が送られてきた場合
                             System.out.println("--- チャット履歴 ---");
                             String[] lines = str_server.substring(8).split("\\\n");
                             for (String line : lines) {
@@ -57,7 +55,6 @@ public class Client {
             receiveThread.setDaemon(true);
             receiveThread.start();
 
-            // 標準入力受付スレッド
             while (true) {
                 String input = sc.nextLine();
                 if (input.trim().equalsIgnoreCase("HELP")) {
