@@ -16,7 +16,6 @@ public class Server {
             serverSocket = new ServerSocket(PORT);
             gameBoard = new GameBoard();
             clients = new ArrayList<>();
-
             System.out.println("サーバーが起動しました。ポート: " + PORT);
         } catch (IOException e) {
             System.out.println("サーバーの起動に失敗しました: " + e.getMessage());
@@ -30,19 +29,11 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 int playerId = clients.size() + 1;
                 System.out.println("クライアントが接続しました: " + clientSocket.getInetAddress());
-
-                // TODO: クライアントとの通信処理を実装
-                // 1. クライアントからのコマンド受信
-                // 2. ゲーム状態の更新
-                // 3. 更新された状態をクライアントに送信
-
                 ClientHandler handler = new ClientHandler(clientSocket, playerId, gameBoard, this);
                 clients.add(handler);
                 handler.start();
             }
-
             System.out.println("ゲームを開始します");
-
         } catch (IOException e) {
             System.out.println("クライアントとの通信でエラーが発生しました: " + e.getMessage());
         }
@@ -78,9 +69,8 @@ public class Server {
         Server server = new Server();
         server.start();
     }
-} 
+}
 
-//各プレイヤーとの通信処理を行うスレッド
 class ClientHandler extends Thread {
     private Socket socket;
     private int playerId;
@@ -97,7 +87,7 @@ class ClientHandler extends Thread {
         this.gameBoard = gameBoard;
         this.server = server;
     }
-    
+
     @Override
     public void run() {
         try {
@@ -105,105 +95,99 @@ class ClientHandler extends Thread {
             out = new PrintWriter(socket.getOutputStream(), true);
             out.println("プレイヤー" + playerId + " として接続しました。");
             sendPlayerPiecesInfo();
-
-            // チャット/履歴コマンド常時受付用スレッド
-            Thread chatThread = new Thread(() -> {
-                try {
-                    String input;
-                    while (running && (input = in.readLine()) != null) {
-                        input = input.trim();
-                        if (input.isEmpty()) continue;
-                        if (input.startsWith("/chat ")) {
-                            String chatMsg = "プレイヤー" + playerId + ": " + input.substring(6);
-                            server.addChat(chatMsg);
-                            server.broadcast("CHAT:" + chatMsg);
-                        } else if (input.equals("/history")) {
-                            StringBuilder sb = new StringBuilder();
-                            synchronized(server.chatHistory) {
-                                for (String chat : server.chatHistory) {
-                                    sb.append(chat).append("\n");
-                                }
-                            }
-                            sendMessage("HISTORY:" + sb.toString());
-                        } else {
-                            // ゲームコマンドは自分のターン以外なら警告
-                            if (server.getCurrentTurn() != playerId) {
-                                sendMessage("現在はあなたの番ではありません。");
-                            } else {
-                                synchronized (this) {
-                                    if (latestGameCommand == null) {
-                                        latestGameCommand = input;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    // 通信切断時
-                }
-            });
-            chatThread.setDaemon(true);
-            chatThread.start();
-
-            //ターン管理
-            while(!server.isGameOver()){
-                if(server.getCurrentTurn() != playerId && !server.isGameOver()){
-                    sendMessage("相手が入力中...");
-                }
-                while(server.getCurrentTurn() != playerId && !server.isGameOver()){
-                    try{
-                        Thread.sleep(1000);
-                    }catch(InterruptedException e){
-                        e.printStackTrace();
-                    }
-                }
-
-                if(server.isGameOver()){
-                    sendMessage("ゲームは終了しました");
-                    break;
-                }
-
-                sendMessage("あなたのターンです！");
-
-                // ゲームコマンドが入力されるまで待機
-                String input = null;
-                while (input == null && running) {
-                    synchronized (chatThread) {
-                        input = latestGameCommand;
-                        latestGameCommand = null;
-                    }
-                    if (input == null) {
-                        try { Thread.sleep(100); } catch (InterruptedException e) {}
-                    }
-                }
-                if (input != null) {
-                    String[] parts = input.split(" ");
-                    String command = parts[0].toUpperCase();
-                    switch (command) {
-                        case "PLACE":
-                            handlePlace(parts);
-                            break;
-                        case "MOVE":
-                            handleMove(parts);
-                            break;
-                        case "BOARD":
-                            out.println(gameBoard.getBoardState());
-                            break;
-                        default:
-                            out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
-                    }
-                }
-                // ここでターン終了、次のターンへ
-            }
+            Thread commandListener = new Thread(this::listenForClientCommands);
+            commandListener.setDaemon(true);
+            commandListener.start();
+            handleGameLoop(commandListener);
             running = false;
             try{
                 socket.close();
             }catch(IOException e){
                 e.printStackTrace();
             }
-            
         } catch (IOException e) {
             System.out.println("プレイヤー " + playerId + " との通信でエラー: " + e.getMessage());
+        }
+    }
+
+    private void listenForClientCommands() {
+        try {
+            String input;
+            while (running && (input = in.readLine()) != null) {
+                input = input.trim();
+                if (input.isEmpty()) continue;
+                if (input.startsWith("/chat ")) {
+                    processChatCommand(input);
+                } else {
+                    processGameCommand(input);
+                }
+            }
+        } catch (IOException e) {
+        }
+    }
+
+    private void processChatCommand(String input) {
+        String chatMsg = "プレイヤー" + playerId + ": " + input.substring(6);
+        server.addChat(chatMsg);
+        server.broadcast("CHAT:" + chatMsg);
+    }
+
+    private void processGameCommand(String input) {
+        if (server.getCurrentTurn() != playerId) {
+            sendMessage("現在はあなたの番ではありません。");
+        } else {
+            synchronized (this) {
+                if (latestGameCommand == null) {
+                    latestGameCommand = input;
+                }
+            }
+        }
+    }
+
+    private void handleGameLoop(Thread chatThread) {
+        while(!server.isGameOver()){
+            if(server.getCurrentTurn() != playerId && !server.isGameOver()){
+                sendMessage("相手が入力中...");
+            }
+            while(server.getCurrentTurn() != playerId && !server.isGameOver()){
+                try{
+                    Thread.sleep(1000);
+                }catch(InterruptedException e){
+                    e.printStackTrace();
+                }
+            }
+            if(server.isGameOver()){
+                sendMessage("ゲームは終了しました");
+                break;
+            }
+            sendMessage("あなたのターンです！");
+            String input = null;
+            while (input == null && running) {
+                synchronized (chatThread) {
+                    input = latestGameCommand;
+                    latestGameCommand = null;
+                }
+                if (input == null) {
+                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+                }
+            }
+            if (input != null) {
+                String[] parts = input.split(" ");
+                String command = parts[0].toUpperCase();
+                switch (command) {
+                    case "PLACE":
+                        handlePlace(parts);
+                        break;
+                    case "MOVE":
+                        handleMove(parts);
+                        break;
+                    case "BOARD":
+                        out.println(gameBoard.getBoardState());
+                        break;
+                    default:
+                        out.println("不明なコマンドです。PLACE x y size / MOVE fromX fromY toX toY");
+                }
+            }
         }
     }
 
@@ -223,38 +207,33 @@ class ClientHandler extends Thread {
             out.println("現在はあなたの番ではありません。");
             return;
         }
-
         if (parts.length != 4) {
             out.println("PLACEコマンドの形式: PLACE x y size");
             return;
         }
-
         try {
             int x = Integer.parseInt(parts[1]);
             int y = Integer.parseInt(parts[2]);
             int size = Integer.parseInt(parts[3]);
-
             Piece piece = new Piece(size, playerId);
-
             synchronized (gameBoard) {
                 if (gameBoard.canPlacePiece(x, y, piece)) {
                     gameBoard.placePiece(x, y, piece);
                     server.broadcast(gameBoard.getBoardState());
                     sendPlayerPiecesInfo();
-
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
                         server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
-                            socket.close(); //通信終了
+                            socket.close();
                         }catch(IOException e){
                             e.printStackTrace();
                         }
-                        return; 
+                        return;
                     } else {
                         server.switchTurn();
-                        server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn()); 
+                        server.broadcast("現在のターン: プレイヤー " + server.getCurrentTurn());
                     }
                 } else {
                     out.println("その位置にはコマを置けません。");
@@ -270,34 +249,30 @@ class ClientHandler extends Thread {
             out.println("現在はあなたの番ではありません。");
             return;
         }
-
         if (parts.length != 5) {
             out.println("MOVEコマンドの形式: MOVE fromX fromY toX toY");
             return;
         }
-
         try {
             int fromX = Integer.parseInt(parts[1]);
             int fromY = Integer.parseInt(parts[2]);
             int toX = Integer.parseInt(parts[3]);
             int toY = Integer.parseInt(parts[4]);
-
             synchronized (gameBoard) {
                 if (gameBoard.canMovePiece(fromX, fromY, toX, toY, playerId)) {
                     gameBoard.movePiece(fromX, fromY, toX, toY);
                     server.broadcast(gameBoard.getBoardState());
                     sendPlayerPiecesInfo();
-
                     int winner = gameBoard.checkWinner();
                     if (winner > 0) {
                         server.broadcast("WINNER " + winner);
                         server.setGameOver(true);
                         try{
-                            socket.close(); //通信終了
+                            socket.close();
                         }catch(IOException e){
                             e.printStackTrace();
                         }
-                        return; 
+                        return;
                     } else {
                         sendMessage("ターン終了");
                         server.switchTurn();
