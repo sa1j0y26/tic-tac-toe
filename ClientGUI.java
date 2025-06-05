@@ -128,7 +128,15 @@ public class ClientGUI extends JFrame {
         });
 
         helpButton.addActionListener(_ ->{
-            chatArea.append("<操作方法>\nコマを置く: 場所と大きさを指定してPLACEボタンを押す\nコマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\nチャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\nチャット履歴参照: 上の履歴タブ\n");
+            JOptionPane.showMessageDialog(this,
+                "<操作方法>\n" +
+                "コマを置く: 場所と大きさを指定してPLACEボタンを押す\n" +
+                "コマを動かす: MOVEボタンを押してから移動前のマス、移動先のマスを指定する\n" +
+                "チャット送信: 下のテキストボックスにメッセージを入力後、送信ボタンを押す\n" +
+                "チャット履歴参照: 上の履歴タブ\n",
+                "ヘルプ",
+                JOptionPane.INFORMATION_MESSAGE
+            );
         });
 
         sendButton.addActionListener(_ -> sendChat());
