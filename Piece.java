@@ -1,6 +1,6 @@
-public class Piece {
-    private int size; // コマの大きさ（1: 小, 2: 中, 3: 大）
-    private int owner; // プレイヤー番号（1 or 2）
+public final class Piece {
+    private final int size; // コマの大きさ（1: 小, 2: 中, 3: 大）
+    private final int owner; // プレイヤー番号（1 or 2）
 
     public Piece(int size, int owner) {
         this.size = size;
