@@ -41,7 +41,7 @@ public class ClientGUI extends JFrame {
     private int myPlayerId = -1;
 
     public ClientGUI() {
-        setTitle("Tic-Tac-Toe クライアント");
+        setTitle("スタック式陣取りゲーム");
         setSize(500, 800);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
